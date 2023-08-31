@@ -26,7 +26,7 @@ type Faixa struct {
 type Line Faixa
 type Column Faixa
 
-func GenerateSudoku() Sudoku {
+func GenerateSudoku(line, col int) Sudoku {
 	var sudoku Sudoku
 
 	return sudoku
@@ -45,13 +45,13 @@ func (s *Sudoku) GetSectorByCoord(line, col int) *Sector {
 func (s *Sudoku) GetLine(lineNumber int) (line *Line) {
 	line = &Line{}
 
-	if lineNumber < 0 || lineNumber > s.Lines {
+	if lineNumber < 0 || lineNumber >= s.Lines {
 		return
 	}
 
 	for i := range s.Sectors {
 		for j := range s.Sectors[i].Tiles {
-			if s.Sectors[i].Tiles[j].Line == lineNumber {
+			if s.Sectors[i].Tiles[j].Line == lineNumber+1 {
 				line.Tiles = append(line.Tiles, &s.Sectors[i].Tiles[j])
 			}
 		}
@@ -63,13 +63,13 @@ func (s *Sudoku) GetLine(lineNumber int) (line *Line) {
 func (s *Sudoku) GetColumn(colNumber int) (column *Column) {
 	column = &Column{}
 
-	if colNumber < 0 || colNumber > s.Columns {
+	if colNumber < 0 || colNumber >= s.Columns {
 		return
 	}
 
 	for i := range s.Sectors {
 		for j := range s.Sectors[i].Tiles {
-			if s.Sectors[i].Tiles[j].Column == colNumber {
+			if s.Sectors[i].Tiles[j].Column == colNumber+1 {
 				column.Tiles = append(column.Tiles, &s.Sectors[i].Tiles[j])
 			}
 		}

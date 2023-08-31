@@ -8,20 +8,20 @@ import (
 )
 
 const (
-	MAGIC_NUMBER = 45
+	MAGIC_NUMBER  = 45
+	LINES         = 3
+	COLUMNS       = 3
+	ELEMENTS_SIZE = LINES * COLUMNS
 )
 
 func TestSudokuGeneration(t *testing.T) {
 
-	var sudoku = GenerateSudoku()
+	var sudoku = GenerateSudoku(LINES, COLUMNS)
 
 	t.Run("TestSector", func(t *testing.T) {
-		// var sectorLines = 3
-		// var sectorColumns = 3
-		var sectorsLength = 9
 
 		t.Run("TestSectorLength", func(t *testing.T) {
-			assert.Equal(t, sectorsLength, len(sudoku.Sectors))
+			assert.Equal(t, ELEMENTS_SIZE, len(sudoku.Sectors))
 		})
 
 		for _, sector := range sudoku.Sectors {
@@ -34,7 +34,7 @@ func TestSudokuGeneration(t *testing.T) {
 			})
 
 			t.Run("TestHasAllNumber", func(t *testing.T) {
-				for i := 1; i <= 9; i++ {
+				for i := 1; i <= ELEMENTS_SIZE; i++ {
 					assert.True(t, utils.Has(numbers, i))
 				}
 			})
@@ -42,11 +42,51 @@ func TestSudokuGeneration(t *testing.T) {
 	})
 
 	t.Run("TestLines", func(t *testing.T) {
+		for i := 0; i < ELEMENTS_SIZE; i++ {
+			line := sudoku.GetLine(i)
 
+			var numbers = utils.Map(line.Tiles, func(v *Tile) int {
+				return v.Value
+			})
+
+			t.Run("TestLineElementsCount", func(t *testing.T) {
+				assert.Equal(t, ELEMENTS_SIZE, len(line.Tiles))
+			})
+
+			t.Run("TestLineElementsSum", func(t *testing.T) {
+				assert.Equal(t, MAGIC_NUMBER, sumElements(numbers...))
+			})
+
+			t.Run("TestHasAllNumber", func(t *testing.T) {
+				for j := 1; j <= ELEMENTS_SIZE; j++ {
+					assert.True(t, utils.Has(numbers, j))
+				}
+			})
+		}
 	})
 
 	t.Run("TestColumns", func(t *testing.T) {
+		for i := 0; i < ELEMENTS_SIZE; i++ {
+			column := sudoku.GetColumn(i)
 
+			var numbers = utils.Map(column.Tiles, func(v *Tile) int {
+				return v.Value
+			})
+
+			t.Run("TestColumnElementsCount", func(t *testing.T) {
+				assert.Equal(t, ELEMENTS_SIZE, len(column.Tiles))
+			})
+
+			t.Run("TestColumnElementsSum", func(t *testing.T) {
+				assert.Equal(t, MAGIC_NUMBER, sumElements(numbers...))
+			})
+
+			t.Run("TestHasAllNumber", func(t *testing.T) {
+				for j := 1; j <= ELEMENTS_SIZE; j++ {
+					assert.True(t, utils.Has(numbers, j))
+				}
+			})
+		}
 	})
 
 }
