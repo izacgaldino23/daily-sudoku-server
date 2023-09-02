@@ -1,5 +1,10 @@
 package utils
 
+import (
+	"math/rand"
+	"time"
+)
+
 func Map[T comparable, R any](elements []T, callback func(T) R) []R {
 	res := make([]R, 0)
 
@@ -18,4 +23,9 @@ func Has[T comparable](elements []T, searched T) bool {
 	}
 
 	return false
+}
+
+func Shuffle[T comparable](elements []T) {
+	rand.Seed(time.Now().UnixNano())
+	rand.Shuffle(len(elements), func(i, j int) { elements[i], elements[j] = elements[j], elements[i] })
 }
