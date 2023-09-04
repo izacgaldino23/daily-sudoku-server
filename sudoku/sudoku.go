@@ -1,15 +1,18 @@
 package sudoku
 
 import (
-	"math"
+	"fmt"
+	"log"
 
 	"github.com/izacgaldino23/daily-sudoku-server/utils"
 )
 
 type Sudoku struct {
-	Sectors []Sector
-	Columns int
-	Lines   int
+	Sectors           []Sector
+	Columns           int
+	Lines             int
+	SectorLineCount   int
+	SectorColumnCount int
 }
 
 type Sector struct {
@@ -24,6 +27,7 @@ type Tile struct {
 	Value  int
 	Line   int
 	Column int
+	Sector *Sector
 }
 
 type Track struct {
@@ -34,23 +38,25 @@ type Track struct {
 type Line Track
 type Column Track
 
-func GenerateSudoku(lines, cols int) Sudoku {
+func GenerateSudoku(lines, cols, sectorLines, sectorCols int) Sudoku {
 	var sudoku Sudoku = Sudoku{
-		Columns: cols,
-		Lines:   lines,
+		Columns:           cols,
+		Lines:             lines,
+		SectorLineCount:   sectorLines,
+		SectorColumnCount: sectorCols,
 	}
 
 	// Create sectors
 	sudoku.CreateSectors()
 
 	// Try generate sudoku numbers
-	sudoku.generateAllNumbers(0, 0, sudoku.Lines*sudoku.Lines, sudoku.Columns*sudoku.Columns)
+	sudoku.generateAllNumbers(0, 0, sudoku.Lines*sudoku.SectorLineCount, sudoku.Columns*sudoku.SectorColumnCount)
 
 	return sudoku
 }
 
 func (s *Sudoku) CreateSectors() {
-	var sectorsLength = s.Lines * s.Columns
+	var sectorsLength = s.SectorLineCount * s.SectorColumnCount
 
 	for i := 0; i < s.Lines; i++ {
 		for j := 0; j < s.Columns; j++ {
@@ -58,8 +64,8 @@ func (s *Sudoku) CreateSectors() {
 				Tiles:       []Tile{},
 				Line:        i,
 				Column:      j,
-				StartLine:   i * s.Lines,
-				StartColumn: j * s.Columns,
+				StartLine:   i * s.SectorLineCount,
+				StartColumn: j * s.SectorColumnCount,
 			})
 		}
 	}
@@ -81,27 +87,23 @@ func (s *Sudoku) GetSectorByCoord(line, col int) *Sector {
 }
 
 func (s *Sudoku) GetSectorByTileCoord(line, col int) *Sector {
-	x := float64(line) / float64(s.Lines)
-	y := float64(col) / float64(s.Columns)
+	for i := range s.Sectors {
+		for j := range s.Sectors[i].Tiles {
+			if s.Sectors[i].Tiles[j].Column == col && s.Sectors[i].Tiles[j].Line == line {
+				return &s.Sectors[i]
+			}
+		}
+	}
 
-	sectorLine := math.Floor(x)
-	sectorColumn := math.Floor(y)
-
-	return s.GetSectorByCoord(int(sectorLine), int(sectorColumn))
+	return nil
 }
 
 func (s *Sudoku) GetTileByCoord(line, col int) *Tile {
-	x := float64(line) / float64(s.Lines)
-	y := float64(col) / float64(s.Columns)
-
-	sectorLine := math.Floor(x)
-	sectorColumn := math.Floor(y)
-
-	sector := s.GetSectorByCoord(int(sectorLine), int(sectorColumn))
-
-	for i := range sector.Tiles {
-		if sector.Tiles[i].Line == line && sector.Tiles[i].Column == col {
-			return &sector.Tiles[i]
+	for i := range s.Sectors {
+		for j := range s.Sectors[i].Tiles {
+			if s.Sectors[i].Tiles[j].Column == col && s.Sectors[i].Tiles[j].Line == line {
+				return &s.Sectors[i].Tiles[j]
+			}
 		}
 	}
 
@@ -115,7 +117,7 @@ func (s *Sudoku) GetLine(lineNumber int) (line *Line) {
 		return
 	}
 
-	for i := 0; i < s.Columns*s.Columns; i++ {
+	for i := 0; i < s.Columns*s.SectorColumnCount; i++ {
 		tile := s.GetTileByCoord(lineNumber, i)
 		line.Tiles = append(line.Tiles, tile)
 
@@ -131,7 +133,7 @@ func (s *Sudoku) GetColumn(colNumber int) (column *Column) {
 		return
 	}
 
-	for i := 0; i < s.Lines*s.Lines; i++ {
+	for i := 0; i < s.Lines*s.SectorLineCount; i++ {
 		tile := s.GetTileByCoord(i, colNumber)
 		column.Tiles = append(column.Tiles, tile)
 
@@ -143,11 +145,12 @@ func (s *Sudoku) GetColumn(colNumber int) (column *Column) {
 func (s *Sudoku) fillSector(sector *Sector, size int) {
 	var number = 1
 
-	for i := 0; i < s.Lines; i++ {
-		for j := 0; j < s.Columns; j++ {
+	for i := 0; i < s.SectorLineCount; i++ {
+		for j := 0; j < s.SectorColumnCount; j++ {
 			sector.Tiles = append(sector.Tiles, Tile{
 				Line:   sector.StartLine + i,
 				Column: sector.StartColumn + j,
+				Sector: sector,
 			})
 
 			number++
@@ -159,12 +162,12 @@ func (s *Sudoku) generateAllNumbers(actualLine, actualCol, linesCount, colsCount
 	if triedNumbers == nil {
 		triedNumbers = []int{}
 	}
-	// log.Print(fmt.Sprintf("Trying to search LINE: [%v] COL: [%v]", actualLine, actualCol))
+	log.Print(fmt.Sprintf("Trying to search LINE: [%v] COL: [%v]", actualLine, actualCol))
 
 	valid, number := s.generateNumber(actualLine, actualCol, triedNumbers)
 	triedNumbers = append(triedNumbers, number)
 
-	// log.Print(fmt.Sprintf("Valid number [%v]? %v", number, valid))
+	log.Print(fmt.Sprintf("Valid number [%v]? %v", number, valid))
 
 	if valid {
 		s.GetTileByCoord(actualLine, actualCol).Value = number
@@ -202,7 +205,7 @@ func (s *Sudoku) generateAllNumbers(actualLine, actualCol, linesCount, colsCount
 
 func (s *Sudoku) generateNumber(line, col int, triedBefore []int) (valid bool, number int) {
 	numbers := []int{}
-	size := s.Columns * s.Lines
+	size := s.SectorLineCount * s.SectorColumnCount
 
 	for i := 1; i <= size; i++ {
 		if !utils.Has(triedBefore, i) {

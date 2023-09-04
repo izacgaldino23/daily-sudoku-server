@@ -11,12 +11,13 @@ const (
 	MAGIC_NUMBER  = 45
 	LINES         = 3
 	COLUMNS       = 3
+	SECTOR_LENGTH = 3
 	ELEMENTS_SIZE = LINES * COLUMNS
 )
 
 func TestSudokuGeneration(t *testing.T) {
 
-	var sudoku = GenerateSudoku(LINES, COLUMNS)
+	var sudoku = GenerateSudoku(LINES, COLUMNS, SECTOR_LENGTH, SECTOR_LENGTH)
 
 	t.Run("TestSector", func(t *testing.T) {
 
