@@ -8,14 +8,14 @@ import (
 )
 
 func main() {
-	sudoku := sudoku.GenerateSudoku(2, 2)
+	sudoku := sudoku.GenerateSudoku(3, 3)
 
 	printSudoku(sudoku)
 }
 
 func printSudoku(s sudoku.Sudoku) {
-	log.Println(fmt.Sprintf("Sectors count: [%v]", len(s.Sectors)))
-	log.Println(fmt.Sprintf("Sector length: [%v]", len(s.Sectors[0].Tiles)))
+	log.Printf("Sectors count: [%v]", len(s.Sectors))
+	log.Printf("Sector length: [%v]", len(s.Sectors[0].Tiles))
 
 	for i := 0; i < s.Lines*s.Lines; i++ {
 		for j := 0; j < s.Columns*s.Columns; j++ {

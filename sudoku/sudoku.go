@@ -1,8 +1,6 @@
 package sudoku
 
 import (
-	"fmt"
-	"log"
 	"math"
 
 	"github.com/izacgaldino23/daily-sudoku-server/utils"
@@ -113,7 +111,7 @@ func (s *Sudoku) GetTileByCoord(line, col int) *Tile {
 func (s *Sudoku) GetLine(lineNumber int) (line *Line) {
 	line = &Line{}
 
-	if lineNumber < 0 || lineNumber >= s.Lines {
+	if lineNumber < 0 || lineNumber >= s.Lines*s.Lines {
 		return
 	}
 
@@ -129,7 +127,7 @@ func (s *Sudoku) GetLine(lineNumber int) (line *Line) {
 func (s *Sudoku) GetColumn(colNumber int) (column *Column) {
 	column = &Column{}
 
-	if colNumber < 0 || colNumber >= s.Columns {
+	if colNumber < 0 || colNumber >= s.Columns*s.Columns {
 		return
 	}
 
@@ -161,12 +159,12 @@ func (s *Sudoku) generateAllNumbers(actualLine, actualCol, linesCount, colsCount
 	if triedNumbers == nil {
 		triedNumbers = []int{}
 	}
-	log.Print(fmt.Sprintf("Trying to search LINE: [%v] COL: [%v]", actualLine, actualCol))
+	// log.Print(fmt.Sprintf("Trying to search LINE: [%v] COL: [%v]", actualLine, actualCol))
 
 	valid, number := s.generateNumber(actualLine, actualCol, triedNumbers)
 	triedNumbers = append(triedNumbers, number)
 
-	log.Print(fmt.Sprintf("Valid number [%v]? %v", number, valid))
+	// log.Print(fmt.Sprintf("Valid number [%v]? %v", number, valid))
 
 	if valid {
 		s.GetTileByCoord(actualLine, actualCol).Value = number
@@ -254,7 +252,7 @@ func (s *Sudoku) verifyIfNumberIsAlreadyPlacedOnTrack(value, line, col int) bool
 	}
 
 	// Get numbers from collumn
-	columnTiles := s.GetColumn(line).Tiles
+	columnTiles := s.GetColumn(col).Tiles
 	for i := range columnTiles {
 		if columnTiles[i].Value == value {
 			return true
