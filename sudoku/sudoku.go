@@ -1,6 +1,12 @@
 package sudoku
 
-import "math"
+import (
+	"fmt"
+	"log"
+	"math"
+
+	"github.com/izacgaldino23/daily-sudoku-server/utils"
+)
 
 type Sudoku struct {
 	Sectors []Sector
@@ -39,7 +45,8 @@ func GenerateSudoku(lines, cols int) Sudoku {
 	// Create sectors
 	sudoku.CreateSectors()
 
-	// Generate numbers
+	// Try generate sudoku numbers
+	sudoku.generateAllNumbers(0, 0, sudoku.Lines*sudoku.Lines, sudoku.Columns*sudoku.Columns)
 
 	return sudoku
 }
@@ -85,6 +92,24 @@ func (s *Sudoku) GetSectorByTileCoord(line, col int) *Sector {
 	return s.GetSectorByCoord(int(sectorLine), int(sectorColumn))
 }
 
+func (s *Sudoku) GetTileByCoord(line, col int) *Tile {
+	x := float64(line) / float64(s.Lines)
+	y := float64(col) / float64(s.Columns)
+
+	sectorLine := math.Floor(x)
+	sectorColumn := math.Floor(y)
+
+	sector := s.GetSectorByCoord(int(sectorLine), int(sectorColumn))
+
+	for i := range sector.Tiles {
+		if sector.Tiles[i].Line == line && sector.Tiles[i].Column == col {
+			return &sector.Tiles[i]
+		}
+	}
+
+	return nil
+}
+
 func (s *Sudoku) GetLine(lineNumber int) (line *Line) {
 	line = &Line{}
 
@@ -92,12 +117,10 @@ func (s *Sudoku) GetLine(lineNumber int) (line *Line) {
 		return
 	}
 
-	for i := range s.Sectors {
-		for j := range s.Sectors[i].Tiles {
-			if s.Sectors[i].Tiles[j].Line == lineNumber+1 {
-				line.Tiles = append(line.Tiles, &s.Sectors[i].Tiles[j])
-			}
-		}
+	for i := 0; i < s.Columns*s.Columns; i++ {
+		tile := s.GetTileByCoord(lineNumber, i)
+		line.Tiles = append(line.Tiles, tile)
+
 	}
 
 	return
@@ -110,12 +133,10 @@ func (s *Sudoku) GetColumn(colNumber int) (column *Column) {
 		return
 	}
 
-	for i := range s.Sectors {
-		for j := range s.Sectors[i].Tiles {
-			if s.Sectors[i].Tiles[j].Column == colNumber+1 {
-				column.Tiles = append(column.Tiles, &s.Sectors[i].Tiles[j])
-			}
-		}
+	for i := 0; i < s.Lines*s.Lines; i++ {
+		tile := s.GetTileByCoord(i, colNumber)
+		column.Tiles = append(column.Tiles, tile)
+
 	}
 
 	return
@@ -136,14 +157,70 @@ func (s *Sudoku) fillSector(sector *Sector, size int) {
 	}
 }
 
-func (s *Sudoku) generateNumber(line, col int) (number int) {
-	// Get numbers from sector
-	sectorTiles := s.GetSectorByTileCoord(line, col).Tiles
+func (s *Sudoku) generateAllNumbers(actualLine, actualCol, linesCount, colsCount int, triedNumbers ...int) bool {
+	if triedNumbers == nil {
+		triedNumbers = []int{}
+	}
+	log.Print(fmt.Sprintf("Trying to search LINE: [%v] COL: [%v]", actualLine, actualCol))
 
-	// Get numbers from line
-	lineTiles := 
+	valid, number := s.generateNumber(actualLine, actualCol, triedNumbers)
+	triedNumbers = append(triedNumbers, number)
 
-	// Get numbers from collumn
+	log.Print(fmt.Sprintf("Valid number [%v]? %v", number, valid))
+
+	if valid {
+		s.GetTileByCoord(actualLine, actualCol).Value = number
+
+		actualCol++
+
+		// increment to next tile
+		if actualCol == colsCount {
+			actualCol = 0
+			actualLine++
+
+			if actualLine == linesCount {
+				return true
+			}
+		}
+
+		if !s.generateAllNumbers(actualLine, actualCol, linesCount, colsCount) {
+			// decrement to back tile
+			actualCol--
+			if actualCol < 0 {
+				actualCol = colsCount - 1
+				actualLine--
+			}
+
+			s.GetTileByCoord(actualLine, actualCol).Value = 0
+
+			return s.generateAllNumbers(actualLine, actualCol, linesCount, colsCount, triedNumbers...)
+		}
+	} else {
+		return false
+	}
+
+	return true
+}
+
+func (s *Sudoku) generateNumber(line, col int, triedBefore []int) (valid bool, number int) {
+	numbers := []int{}
+	size := s.Columns * s.Lines
+
+	for i := 1; i <= size; i++ {
+		if !utils.Has(triedBefore, i) {
+			numbers = append(numbers, i)
+		}
+	}
+
+	utils.Shuffle(numbers)
+
+	for i := range numbers {
+		number = numbers[i]
+		if invalidNumber := s.verifyIfNumberIsAlreadyPlacedOnTrack(number, line, col); !invalidNumber {
+			valid = true
+			break
+		}
+	}
 
 	return
 }
@@ -156,4 +233,33 @@ func (s *Sector) getTileByCoord(line, col int) *Tile {
 	}
 
 	return nil
+}
+
+func (s *Sudoku) verifyIfNumberIsAlreadyPlacedOnTrack(value, line, col int) bool {
+	// Get numbers from sector
+	sectorTiles := s.GetSectorByTileCoord(line, col).Tiles
+
+	for i := range sectorTiles {
+		if sectorTiles[i].Value == value {
+			return true
+		}
+	}
+
+	// Get numbers from line
+	lineTiles := s.GetLine(line).Tiles
+	for i := range lineTiles {
+		if lineTiles[i].Value == value {
+			return true
+		}
+	}
+
+	// Get numbers from collumn
+	columnTiles := s.GetColumn(line).Tiles
+	for i := range columnTiles {
+		if columnTiles[i].Value == value {
+			return true
+		}
+	}
+
+	return false
 }
