@@ -1,9 +1,6 @@
 package sudoku
 
 import (
-	"fmt"
-	"log"
-
 	"github.com/izacgaldino23/daily-sudoku-server/utils"
 )
 
@@ -162,12 +159,12 @@ func (s *Sudoku) generateAllNumbers(actualLine, actualCol, linesCount, colsCount
 	if triedNumbers == nil {
 		triedNumbers = []int{}
 	}
-	log.Print(fmt.Sprintf("Trying to search LINE: [%v] COL: [%v]", actualLine, actualCol))
+	// log.Print(fmt.Sprintf("Trying to search LINE: [%v] COL: [%v]", actualLine, actualCol))
 
 	valid, number := s.generateNumber(actualLine, actualCol, triedNumbers)
 	triedNumbers = append(triedNumbers, number)
 
-	log.Print(fmt.Sprintf("Valid number [%v]? %v", number, valid))
+	// log.Print(fmt.Sprintf("Valid number [%v]? %v", number, valid))
 
 	if valid {
 		s.GetTileByCoord(actualLine, actualCol).Value = number
